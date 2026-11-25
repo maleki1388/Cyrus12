@@ -1,0 +1,32 @@
+name: Build CYRUS UI APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      # The project has no android/ folder, so generate it (keeps lib/main.dart)
+      - name: Generate Android platform files
+        run: |
+          cp lib/main.dart /tmp/main.dart.bak
+          flutter create . --platforms=android --project-name cyrus_ui --org com.cyrus.ui
+          cp /tmp/main.dart.bak lib/main.dart
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CYRUS-UI-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
